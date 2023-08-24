@@ -3,6 +3,7 @@
 import { FilterQuery, SortOrder } from "mongoose";
 import Thread from "../models/thread.model";
 import User from "../models/user.model";
+import Community from "../models/community.model";
 import { connectToDB } from "../mongoose"
 import { revalidatePath } from 'next/cache';
 
@@ -45,10 +46,10 @@ export async function fetchUser(userId: string) {
 
         return await User
             .findOne({ id: userId })
-            // .populate({
-            //    path: "community",
-            //    model: Community
-            //})
+            .populate({
+                path: "community",
+                model: Community
+            })
     } catch (error: any) {
         throw new Error(`Failed to fetch user: ${error.message}`)
     }
@@ -62,15 +63,22 @@ export async function fetchUserThreads(userId: string) {
             .populate({
                 path: 'threads',
                 model: Thread,
-                populate: {
-                    path: 'children',
-                    model: Thread,
-                    populate: {
-                        path: 'author',
-                        model: User,
-                        select: 'name image id'
+                populate: [
+                    {
+                        path: "community",
+                        model: Community,
+                        select: "name id image _id"
+                    },
+                    {
+                        path: 'children',
+                        model: Thread,
+                        populate: {
+                            path: 'author',
+                            model: User,
+                            select: 'name image id'
+                        }
                     }
-                }
+                ]
             })
 
             return threads;
